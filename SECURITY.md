@@ -16,7 +16,7 @@ We take security vulnerabilities seriously. If you discover a security issue, pl
 
 Instead, please report them via email to:
 
-**[YOUR_SECURITY_EMAIL]**
+**git@lexiconautomata.com**
 
 Include the following information:
 
