@@ -1,0 +1,72 @@
+version: "3.8"
+
+services:
+  # PostgreSQL database for Marquez
+  postgres:
+    image: postgres:15
+    container_name: marquez-postgres
+    environment:
+      POSTGRES_USER: marquez
+      POSTGRES_PASSWORD: marquez
+      POSTGRES_DB: marquez
+    ports:
+      - "5432:5432"
+    volumes:
+      - marquez-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U marquez"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Marquez API + Web UI
+  marquez:
+    image: marquezproject/marquez:latest
+    container_name: marquez
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      # Database connection
+      MARQUEZ_DB_HOST: postgres
+      MARQUEZ_DB_PORT: 5432
+      MARQUEZ_DB_USER: marquez
+      MARQUEZ_DB_PASSWORD: marquez
+      MARQUEZ_DB_NAME: marquez
+
+      # API configuration
+      MARQUEZ_PORT: 5000
+      MARQUEZ_ADMIN_PORT: 5001
+    ports:
+      # OpenLineage API endpoint
+      - "5000:5000"
+      # Admin port
+      - "5001:5001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5001/healthcheck"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Marquez Web UI
+  marquez-web:
+    image: marquezproject/marquez-web:latest
+    container_name: marquez-web
+    depends_on:
+      - marquez
+    environment:
+      MARQUEZ_HOST: marquez
+      MARQUEZ_PORT: 5000
+    ports:
+      # Web UI
+      - "3000:3000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  marquez-db-data:
+    driver: local

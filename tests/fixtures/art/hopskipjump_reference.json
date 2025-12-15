@@ -1,0 +1,73 @@
+{
+  "attack_type": "HopSkipJump",
+  "attack_config": {
+    "max_iter": 2,
+    "max_eval": 150,
+    "init_eval": 100,
+    "init_size": 50,
+    "verbose": false
+  },
+  "test_samples": [
+    [
+      0.1,
+      0.5
+    ],
+    [
+      0.2,
+      0.6
+    ],
+    [
+      0.3,
+      0.4
+    ]
+  ],
+  "adversarial_samples": [
+    [
+      0.6000000238418579,
+      0.3718438446521759
+    ],
+    [
+      0.6000000238418579,
+      0.43655169010162354
+    ],
+    [
+      0.6000000238418579,
+      0.44281721115112305
+    ]
+  ],
+  "original_labels": [
+    0,
+    0,
+    0
+  ],
+  "adversarial_labels": [
+    1,
+    1,
+    1
+  ],
+  "metrics": {
+    "attack_success_rate": 1.0,
+    "samples_tested": 3,
+    "samples_successful": 3,
+    "empirical_robustness_l2": 0.41710288964442466,
+    "empirical_robustness_linf": 0.4000000238418579,
+    "min_perturbation_l2": 0.3030401423506054,
+    "max_perturbation_l2": 0.5161627882707103,
+    "median_perturbation_l2": 0.4321057383119583,
+    "perturbation_std_l2": 0.08765131545733654,
+    "perturbation_std_linf": 0.08164965809277261
+  },
+  "perturbations": {
+    "l2_norms": [
+      0.5161627882707103,
+      0.4321057383119583,
+      0.3030401423506054
+    ],
+    "linf_norms": [
+      0.5000000238418579,
+      0.4000000238418579,
+      0.3000000238418579
+    ]
+  },
+  "notes": "Generated with ART for Rust equivalence testing. Model: LogisticRegression with decision boundary at x[0]=0.5"
+}

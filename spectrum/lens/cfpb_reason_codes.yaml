@@ -1,0 +1,279 @@
+# CFPB Reason Code Library
+#
+# Maps SHAP feature explanations to compliant adverse action reason codes
+# as required by 12 CFR Part 1002 (Regulation B).
+#
+# LEGAL REQUIREMENT:
+# "The statement of reasons must be specific and indicate the principal
+# reasons for the adverse action." - 12 CFR 1002.9(b)(2)
+#
+# USAGE:
+# 1. spectrum.blue generates SHAP explanations identifying top features
+# 2. This library maps feature names to compliant reason codes
+# 3. spectrum.lens generates adverse action notices with proper disclosures
+#
+# PROPRIETARY INTELLIGENCE:
+# This mapping constitutes Lexicon Automata proprietary knowledge.
+# It translates technical ML explanations into legally compliant language.
+
+version: "1.0"
+regulation: "CFPB_REG_B"
+citation: "12 CFR Part 1002.9"
+last_updated: "2025-01-15"
+
+# Reason Code Categories
+# Per CFPB guidance, reason codes must be:
+# 1. Specific (not vague like "credit score")
+# 2. Principal (top factors driving the decision)
+# 3. Understandable (to average consumer)
+# 4. Accurate (reflect actual model logic)
+
+reason_code_categories:
+  # Credit History
+  credit_history:
+    description: "Factors related to credit history and payment behavior"
+    codes:
+      - code: "DELINQUENT_CREDIT_OBLIGATIONS"
+        consumer_text: "Delinquent past or present credit obligations with others"
+        feature_patterns: ["delinq_", "past_due", "late_payment", "default"]
+        severity: "HIGH"
+
+      - code: "GARNISHMENT_ATTACHMENT_FORECLOSURE"
+        consumer_text: "Garnishment, attachment, foreclosure, repossession, or suit"
+        feature_patterns: ["garnishment", "foreclosure", "repossession", "lawsuit"]
+        severity: "HIGH"
+
+      - code: "BANKRUPTCY"
+        consumer_text: "Bankruptcy"
+        feature_patterns: ["bankruptcy", "chapter_7", "chapter_13"]
+        severity: "HIGH"
+
+      - code: "NUMBER_OF_ACCOUNTS"
+        consumer_text: "Number of accounts with delinquent or derogatory payment status"
+        feature_patterns: ["num_delinq", "derog_count", "negative_accounts"]
+        severity: "MEDIUM"
+
+  # Credit Utilization
+  credit_utilization:
+    description: "Factors related to credit usage and available credit"
+    codes:
+      - code: "REVOLVING_CREDIT_TOO_HIGH"
+        consumer_text: "Amount owed on revolving accounts is too high"
+        feature_patterns: ["revol_bal", "credit_card_balance", "utilization_rate"]
+        severity: "MEDIUM"
+
+      - code: "INSUFFICIENT_CREDIT_LIMIT"
+        consumer_text: "Available credit on revolving accounts is too low"
+        feature_patterns: ["credit_limit", "available_credit"]
+        severity: "MEDIUM"
+
+  # Income and Employment
+  income_employment:
+    description: "Factors related to income and employment stability"
+    codes:
+      - code: "INSUFFICIENT_INCOME"
+        consumer_text: "Income insufficient for amount of credit requested"
+        feature_patterns: ["annual_inc", "income", "salary", "wages"]
+        severity: "HIGH"
+
+      - code: "EMPLOYMENT_HISTORY"
+        consumer_text: "Length of employment"
+        feature_patterns: ["emp_length", "years_employed", "job_tenure"]
+        severity: "MEDIUM"
+
+      - code: "DEBT_TO_INCOME_RATIO"
+        consumer_text: "Excessive obligations in relation to income"
+        feature_patterns: ["dti", "debt_to_income", "payment_to_income"]
+        severity: "HIGH"
+
+  # Credit Inquiries
+  credit_inquiries:
+    description: "Factors related to recent credit-seeking behavior"
+    codes:
+      - code: "TOO_MANY_INQUIRIES"
+        consumer_text: "Too many inquiries on credit report"
+        feature_patterns: ["inq_last_6mths", "recent_inquiries", "hard_pulls"]
+        severity: "MEDIUM"
+
+      - code: "TOO_MANY_RECENT_ACCOUNTS"
+        consumer_text: "Number of recently opened accounts"
+        feature_patterns: ["acc_now_delinq", "open_acc", "recent_accounts"]
+        severity: "MEDIUM"
+
+  # Account History
+  account_history:
+    description: "Factors related to credit account history"
+    codes:
+      - code: "LIMITED_CREDIT_HISTORY"
+        consumer_text: "Limited credit experience or history"
+        feature_patterns: ["credit_history_length", "earliest_cr_line", "account_age"]
+        severity: "MEDIUM"
+
+      - code: "NO_RECENT_INSTALLMENT_HISTORY"
+        consumer_text: "Lack of recent installment loan payment history"
+        feature_patterns: ["installment", "loan_history"]
+        severity: "LOW"
+
+  # Loan Characteristics
+  loan_characteristics:
+    description: "Factors related to the requested loan"
+    codes:
+      - code: "LOAN_AMOUNT_TOO_HIGH"
+        consumer_text: "Amount requested exceeds maximum for applicant's financial situation"
+        feature_patterns: ["loan_amnt", "funded_amnt"]
+        severity: "MEDIUM"
+
+      - code: "LOAN_PURPOSE"
+        consumer_text: "Type of credit requested not appropriate for applicant's circumstances"
+        feature_patterns: ["purpose", "loan_purpose"]
+        severity: "LOW"
+
+# Feature Mapping Rules
+# Maps specific feature names to reason codes
+# This is the core proprietary intelligence
+
+feature_mappings:
+  # Direct mappings (feature name → reason code)
+  direct:
+    # Credit score proxies
+    fico_score: "DELINQUENT_CREDIT_OBLIGATIONS"
+    fico_range_low: "DELINQUENT_CREDIT_OBLIGATIONS"
+    fico_range_high: "DELINQUENT_CREDIT_OBLIGATIONS"
+
+    # Income
+    annual_inc: "INSUFFICIENT_INCOME"
+    monthly_income: "INSUFFICIENT_INCOME"
+
+    # DTI
+    dti: "DEBT_TO_INCOME_RATIO"
+    debt_to_income: "DEBT_TO_INCOME_RATIO"
+
+    # Utilization
+    revol_bal: "REVOLVING_CREDIT_TOO_HIGH"
+    revol_util: "REVOLVING_CREDIT_TOO_HIGH"
+
+    # Delinquencies
+    delinq_2yrs: "NUMBER_OF_ACCOUNTS"
+    pub_rec: "GARNISHMENT_ATTACHMENT_FORECLOSURE"
+
+    # Inquiries
+    inq_last_6mths: "TOO_MANY_INQUIRIES"
+
+    # Account counts
+    open_acc: "TOO_MANY_RECENT_ACCOUNTS"
+    total_acc: "LIMITED_CREDIT_HISTORY"
+
+    # Employment
+    emp_length: "EMPLOYMENT_HISTORY"
+
+    # Loan amount
+    loan_amnt: "LOAN_AMOUNT_TOO_HIGH"
+    funded_amnt: "LOAN_AMOUNT_TOO_HIGH"
+
+  # Pattern-based mappings (regex patterns)
+  patterns:
+    - pattern: ".*delinq.*"
+      code: "DELINQUENT_CREDIT_OBLIGATIONS"
+
+    - pattern: ".*bankruptcy.*"
+      code: "BANKRUPTCY"
+
+    - pattern: ".*income.*"
+      code: "INSUFFICIENT_INCOME"
+
+    - pattern: ".*dti.*"
+      code: "DEBT_TO_INCOME_RATIO"
+
+    - pattern: ".*revol.*"
+      code: "REVOLVING_CREDIT_TOO_HIGH"
+
+    - pattern: ".*inq.*"
+      code: "TOO_MANY_INQUIRIES"
+
+    - pattern: ".*emp.*"
+      code: "EMPLOYMENT_HISTORY"
+
+# SHAP Value Interpretation
+# How to interpret SHAP values for reason code generation
+shap_interpretation:
+  # Negative SHAP values increase denial probability
+  # Positive SHAP values decrease denial probability
+
+  direction_mapping:
+    negative_impact:
+      description: "Features with negative SHAP values contribute to denial"
+      action: "Include in adverse action notice as principal reasons"
+      min_abs_value: 0.05  # Minimum |SHAP| to be considered "principal"
+
+    positive_impact:
+      description: "Features with positive SHAP values support approval"
+      action: "Do not include in adverse action notice"
+
+  ranking:
+    description: "Select top N features by absolute SHAP value"
+    top_n: 4  # CFPB guidance recommends 2-4 principal reasons
+    min_count: 2  # At least 2 reasons required
+    max_count: 4  # No more than 4 reasons (avoid overwhelming consumer)
+
+# Compliance Requirements
+compliance_requirements:
+  required_elements:
+    - element: "ECOA_NOTICE"
+      text: "The federal Equal Credit Opportunity Act prohibits creditors from discriminating against credit applicants on the basis of race, color, religion, national origin, sex, marital status, age (provided the applicant has the capacity to enter into a binding contract); because all or part of the applicant's income derives from any public assistance program; or because the applicant has in good faith exercised any right under the Consumer Credit Protection Act."
+
+    - element: "AGENCY_DISCLOSURE"
+      text: "The name and address of the federal agency that administers compliance with ECOA concerning the creditor: Consumer Financial Protection Bureau, 1700 G Street NW, Washington DC 20552"
+
+    - element: "STATEMENT_OF_REASONS"
+      text: "Principal reasons for the adverse action (must be specific)"
+
+  prohibited_reasons:
+    # These cannot be used as adverse action reasons
+    - "Race"
+    - "Color"
+    - "Religion"
+    - "National origin"
+    - "Sex"
+    - "Marital status"
+    - "Age"
+    - "Receipt of public assistance"
+
+  best_practices:
+    - "Use consumer-friendly language"
+    - "Provide 2-4 specific reasons"
+    - "Order reasons by importance (highest SHAP impact first)"
+    - "Include actionable information when possible"
+    - "Avoid technical jargon"
+
+# Example Adverse Action Notice Template
+example_notice:
+  applicant_name: "John Doe"
+  application_date: "2025-01-15"
+  decision: "DENIED"
+
+  reasons:
+    - code: "DEBT_TO_INCOME_RATIO"
+      consumer_text: "Excessive obligations in relation to income"
+
+    - code: "REVOLVING_CREDIT_TOO_HIGH"
+      consumer_text: "Amount owed on revolving accounts is too high"
+
+    - code: "TOO_MANY_INQUIRIES"
+      consumer_text: "Too many inquiries on credit report"
+
+  ecoa_notice: "The federal Equal Credit Opportunity Act prohibits creditors from discriminating against credit applicants on the basis of race, color, religion, national origin, sex, marital status, age (provided the applicant has the capacity to enter into a binding contract); because all or part of the applicant's income derives from any public assistance program; or because the applicant has in good faith exercised any right under the Consumer Credit Protection Act."
+
+  agency_disclosure: "Consumer Financial Protection Bureau, 1700 G Street NW, Washington DC 20552"
+
+  additional_information: "You have the right to request additional information about the decision. Please contact us within 60 days."
+
+# Metadata
+metadata:
+  proprietary: true
+  owner: "Lexicon Automata"
+  last_reviewed: "2025-01-15"
+  review_frequency_days: 180
+  notes: |
+    This reason code library is proprietary intelligence developed by Lexicon Automata.
+    It translates technical ML feature importance into legally compliant adverse action
+    language. This is a core component of the "Law Pack" competitive advantage.

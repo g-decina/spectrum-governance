@@ -1,0 +1,18 @@
+[workspace]
+members = [
+    "spectrum-core/spectrum-common",
+    "spectrum-core/spectrum-infra",
+    "spectrum-core/spectrum-red",
+    "spectrum-core/spectrum-blue",
+    "spectrum-core/spectrum-lens",
+]
+resolver = "2"
+
+[workspace.dependencies]
+# Shared dependencies to ensure version consistency across crates
+ndarray = "0.15"  # Must match numpy 0.20 requirement
+ndarray-rand = "0.14"  # Compatible with ndarray 0.15
+serde = { version = "1.0", features = ["derive"] }
+statrs = "0.18"
+thiserror = "1.0"
+tokio = { version = "1.0", features = ["full"] }

@@ -1,0 +1,38 @@
+[package]
+name = "spectrum-red"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "spectrum_red"
+crate-type = ["cdylib", "rlib"]
+
+[features]
+default = []
+python = ["pyo3", "numpy"]
+onnx = ["ort"]
+
+[dependencies]
+# Inherit from workspace
+ndarray = { workspace = true }
+ndarray-rand = { workspace = true }
+serde = { workspace = true }
+thiserror = { workspace = true }
+
+# Dependencies specific to attacks (e.g., optimization, random)
+rand = "0.8"
+rand_distr = "0.4"
+statrs = { workspace = true }
+rayon = "1.10"
+
+# Python bindings (optional)
+pyo3 = { version = "0.20", features = ["extension-module"], optional = true }
+numpy = { version = "0.20", optional = true }
+
+# ONNX runtime (optional) - using onnxruntime-rs instead of tract
+# download-binaries: Auto-download ONNX Runtime libs (~100MB)
+ort = { version = "2.0.0-rc.10", optional = true, default-features = false, features = ["half", "copy-dylibs", "download-binaries"] }
+
+[dev-dependencies]
+serde_json = "1.0"
+approx = "0.5"

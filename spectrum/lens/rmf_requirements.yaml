@@ -1,0 +1,268 @@
+# NIST AI RMF 1.0 Requirements Database
+#
+# This file defines the requirements from the NIST AI Risk Management Framework
+# and maps them to technical controls in spectrum-governance.
+#
+# Structure:
+#   - function: GOVERN, MAP, MEASURE, or MANAGE
+#   - category: e.g., "1.1" (from NIST RMF category numbering)
+#   - subcategory: e.g., "a", "b", "c"
+#   - description: Plain language requirement
+#   - artifact_schema: Path to JSON schema for required documentation
+#   - technical_control: spectrum CLI command that generates evidence
+#   - evidence_query: RCIA log query pattern for validation
+#   - staleness_days: Days before evidence becomes stale
+
+requirements:
+  # GOVERN: Policies, Processes, and Oversight
+  - id: GOVERN-1.1-a
+    function: GOVERN
+    category: "1.1"
+    subcategory: "a"
+    description: "Organization has documented AI governance structure with clear accountability"
+    artifact_schema: "governance_charter.schema.json"
+    technical_control: null
+    evidence_query: null
+    staleness_days: 365
+
+  - id: GOVERN-1.2-a
+    function: GOVERN
+    category: "1.2"
+    subcategory: "a"
+    description: "Organization has established risk tolerance levels for AI systems"
+    artifact_schema: "risk_policy.schema.json"
+    technical_control: null
+    evidence_query: null
+    staleness_days: 180
+
+  - id: GOVERN-2.1-a
+    function: GOVERN
+    category: "2.1"
+    subcategory: "a"
+    description: "Legal and regulatory requirements are identified and mapped to AI systems"
+    artifact_schema: "regulatory_mapping.schema.json"
+    technical_control: null
+    evidence_query: null
+    staleness_days: 90
+
+  # MAP: Context and Risk Assessment
+  - id: MAP-1.1-a
+    function: MAP
+    category: "1.1"
+    subcategory: "a"
+    description: "AI system purpose and intended use are documented"
+    artifact_schema: "model_card.schema.json"
+    technical_control: null
+    evidence_query: null
+    staleness_days: 180
+
+  - id: MAP-2.1-a
+    function: MAP
+    category: "2.1"
+    subcategory: "a"
+    description: "AI system is categorized by risk level (HIGH, MODERATE, LOW)"
+    artifact_schema: "risk_assessment.schema.json"
+    technical_control: null
+    evidence_query: null
+    staleness_days: 180
+
+  - id: MAP-3.1-a
+    function: MAP
+    category: "3.1"
+    subcategory: "a"
+    description: "Potential impacts and harms from AI system are identified"
+    artifact_schema: "impact_assessment.schema.json"
+    technical_control: null
+    evidence_query: null
+    staleness_days: 180
+
+  - id: MAP-5.1-a
+    function: MAP
+    category: "5.1"
+    subcategory: "a"
+    description: "Data provenance and lineage are documented"
+    artifact_schema: null
+    technical_control: null
+    evidence_query: "event_type:lineage.start"
+    staleness_days: 90
+
+  # MEASURE: Testing and Validation
+  - id: MEASURE-2.1-a
+    function: MEASURE
+    category: "2.1"
+    subcategory: "a"
+    description: "Model performance metrics are measured and documented"
+    artifact_schema: "performance_report.schema.json"
+    technical_control: null
+    evidence_query: "event_type:model.evaluation"
+    staleness_days: 90
+
+  - id: MEASURE-2.2-a
+    function: MEASURE
+    category: "2.2"
+    subcategory: "a"
+    description: "Adversarial robustness is tested with documented attack success rates"
+    artifact_schema: null
+    technical_control: "spectrum red"
+    evidence_query: "event_type:adversarial.test"
+    staleness_days: 90
+
+  - id: MEASURE-2.3-a
+    function: MEASURE
+    category: "2.3"
+    subcategory: "a"
+    description: "Fairness metrics across protected attributes are measured"
+    artifact_schema: null
+    technical_control: "spectrum blue --fairness-check"
+    evidence_query: "event_type:fairness.test"
+    staleness_days: 90
+
+  - id: MEASURE-2.4-a
+    function: MEASURE
+    category: "2.4"
+    subcategory: "a"
+    description: "Uncertainty quantification is performed and validated"
+    artifact_schema: null
+    technical_control: "spectrum blue"
+    evidence_query: "event_type:uncertainty.calibration"
+    staleness_days: 90
+
+  - id: MEASURE-2.7-a
+    function: MEASURE
+    category: "2.7"
+    subcategory: "a"
+    description: "AI system explanations are generated and validated"
+    artifact_schema: null
+    technical_control: "spectrum blue --explain"
+    evidence_query: "event_type:explanation.generated"
+    staleness_days: 90
+
+  - id: MEASURE-3.1-a
+    function: MEASURE
+    category: "3.1"
+    subcategory: "a"
+    description: "Test data is representative of deployment environment"
+    artifact_schema: "data_validation.schema.json"
+    technical_control: null
+    evidence_query: null
+    staleness_days: 90
+
+  # MANAGE: Risk Response and Monitoring
+  - id: MANAGE-1.1-a
+    function: MANAGE
+    category: "1.1"
+    subcategory: "a"
+    description: "Risk treatment plan is documented for identified risks"
+    artifact_schema: "risk_treatment.schema.json"
+    technical_control: null
+    evidence_query: null
+    staleness_days: 180
+
+  - id: MANAGE-2.1-a
+    function: MANAGE
+    category: "2.1"
+    subcategory: "a"
+    description: "Data drift is monitored with alerts for distribution changes"
+    artifact_schema: null
+    technical_control: "spectrum blue --drift-check"
+    evidence_query: "event_type:drift.check"
+    staleness_days: 30
+
+  - id: MANAGE-3.1-a
+    function: MANAGE
+    category: "3.1"
+    subcategory: "a"
+    description: "Incidents and anomalies are logged and tracked"
+    artifact_schema: null
+    technical_control: null
+    evidence_query: "event_type:incident"
+    staleness_days: 1
+
+  - id: MANAGE-4.1-a
+    function: MANAGE
+    category: "4.1"
+    subcategory: "a"
+    description: "Regular re-validation is performed based on staleness thresholds"
+    artifact_schema: "validation_schedule.schema.json"
+    technical_control: null
+    evidence_query: null
+    staleness_days: 90
+
+# Artifact Schemas
+# These define the required structure for governance artifacts
+artifact_schemas:
+  governance_charter.schema.json:
+    type: object
+    required: [governance_body, accountability, review_frequency]
+    properties:
+      governance_body:
+        type: string
+        description: "Name of the AI governance board or committee"
+      accountability:
+        type: object
+        description: "Roles and responsibilities"
+      review_frequency:
+        type: string
+        description: "How often governance is reviewed"
+
+  risk_policy.schema.json:
+    type: object
+    required: [risk_levels, acceptance_criteria, escalation_process]
+    properties:
+      risk_levels:
+        type: object
+        description: "Definition of HIGH, MODERATE, LOW risk"
+      acceptance_criteria:
+        type: object
+        description: "Thresholds for each risk level"
+      escalation_process:
+        type: string
+        description: "Process for escalating high-risk findings"
+
+  model_card.schema.json:
+    type: object
+    required: [model_name, intended_use, limitations, performance]
+    properties:
+      model_name:
+        type: string
+      intended_use:
+        type: string
+        description: "What the model is designed to do"
+      limitations:
+        type: array
+        items:
+          type: string
+        description: "Known limitations and constraints"
+      performance:
+        type: object
+        description: "Performance metrics on test data"
+
+  risk_assessment.schema.json:
+    type: object
+    required: [system_name, risk_level, justification, date]
+    properties:
+      system_name:
+        type: string
+      risk_level:
+        type: string
+        enum: [HIGH, MODERATE, LOW]
+      justification:
+        type: string
+        description: "Reasoning for risk categorization"
+      date:
+        type: string
+        format: date
+
+  performance_report.schema.json:
+    type: object
+    required: [metrics, test_date, dataset_info]
+    properties:
+      metrics:
+        type: object
+        description: "Performance metrics (accuracy, precision, etc.)"
+      test_date:
+        type: string
+        format: date-time
+      dataset_info:
+        type: object
+        description: "Information about test dataset"

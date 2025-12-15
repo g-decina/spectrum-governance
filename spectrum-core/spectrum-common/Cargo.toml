@@ -1,0 +1,10 @@
+[package]
+name = "spectrum-common"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+ndarray = { workspace = true }
+serde = { workspace = true }
+statrs = { workspace = true }
+thiserror = { workspace = true }

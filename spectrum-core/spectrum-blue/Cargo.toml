@@ -1,0 +1,11 @@
+[package]
+name = "spectrum-blue"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+spectrum-common = { path = "../spectrum-common" }
+ndarray = { workspace = true }
+serde = { workspace = true }
+statrs = { workspace = true }
+thiserror = { workspace = true }

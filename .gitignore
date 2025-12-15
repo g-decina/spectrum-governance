@@ -1,0 +1,337 @@
+# =============================================================================
+# Spectrum Governance - .gitignore
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Python
+# -----------------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+pytest_cache/
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Ruff / linting
+.ruff_cache/
+.pylint.d/
+
+# Type stubs
+.pyi
+
+# Pydantic
+*.pydantic.json
+
+# -----------------------------------------------------------------------------
+# Rust
+# -----------------------------------------------------------------------------
+target/
+# Don't ignore Cargo.lock for libraries - it's recommended to check in
+# Cargo.lock
+**/*.rs.bk
+*.rlib
+*.rmeta
+
+# Maturin build artifacts
+*.whl
+*.tar.gz
+spectrum_red_core*.so
+spectrum_red_core*.pyd
+spectrum_red_core*.dylib
+
+# -----------------------------------------------------------------------------
+# IDEs and Editors
+# -----------------------------------------------------------------------------
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.pydevproject
+.settings/
+*.sublime-workspace
+*.sublime-project
+.spyproject
+.spyderproject
+*.code-workspace
+
+# JetBrains
+*.iml
+.idea/
+
+# Vim
+[._]*.s[a-v][a-z]
+[._]*.sw[a-p]
+[._]s[a-rt-v][a-z]
+[._]ss[a-gi-z]
+[._]sw[a-p]
+Session.vim
+Sessionx.vim
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
+
+# -----------------------------------------------------------------------------
+# OS Generated
+# -----------------------------------------------------------------------------
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# -----------------------------------------------------------------------------
+# Project Specific - Test Artifacts
+# -----------------------------------------------------------------------------
+# Test output files (generated during testing)
+test_output/
+test_results/
+*_test_output.json
+*_test_results.json
+
+# Generated audit reports (test outputs)
+audit_report_*.docx
+audit_report_*.pdf
+audit_report_*.html
+
+# Benchmark results
+benchmark_results/
+*.benchmark.json
+
+# Test fixtures that are generated (not checked in)
+tests/fixtures/generated/
+
+# -----------------------------------------------------------------------------
+# ML / Data Science Artifacts
+# -----------------------------------------------------------------------------
+# Large model files (should use Git LFS or external storage)
+*.onnx
+*.pkl
+*.joblib
+*.h5
+*.hdf5
+*.pb
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+*.bin
+
+# Saved models directories
+saved_models/
+checkpoints/
+model_cache/
+
+# Data files (should use Git LFS or external storage)
+*.csv
+*.parquet
+*.feather
+*.arrow
+*.npy
+*.npz
+
+# Keep test fixtures
+!tests/fixtures/*.csv
+!tests/fixtures/*.parquet
+!tests/fixtures/*.json
+
+# MLflow
+mlruns/
+mlartifacts/
+
+# Weights & Biases
+wandb/
+
+# TensorBoard
+runs/
+logs/
+tensorboard/
+
+# Hugging Face cache
+.cache/huggingface/
+
+# -----------------------------------------------------------------------------
+# ONNX Runtime
+# -----------------------------------------------------------------------------
+*.ort
+onnxruntime_profile*/
+
+# -----------------------------------------------------------------------------
+# Private/Internal Development
+# -----------------------------------------------------------------------------
+# Internal development docs (not for public repo)
+private/
+
+# Local configuration overrides
+*.local.yaml
+*.local.json
+*.local.toml
+
+# Claude Code config (local settings)
+.claude/
+
+# Environment files with secrets
+.env
+.env.local
+.env.*.local
+.env.production
+.env.staging
+secrets/
+credentials/
+
+# Keep the example
+!.env.example
+
+# API keys and credentials
+*.pem
+*.key
+*.crt
+*.p12
+
+# -----------------------------------------------------------------------------
+# Documentation Build
+# -----------------------------------------------------------------------------
+docs/_build/
+docs/api/
+site/
+.mkdocs/
+
+# Sphinx
+_build/
+doctrees/
+
+# -----------------------------------------------------------------------------
+# Jupyter Notebooks
+# -----------------------------------------------------------------------------
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+.jupyter/
+
+# Notebook outputs (keep notebooks, ignore large outputs)
+# Use nbstripout to clean notebooks before commit
+
+# -----------------------------------------------------------------------------
+# Docker
+# -----------------------------------------------------------------------------
+*.log
+docker-compose.override.yml
+.docker/
+
+# -----------------------------------------------------------------------------
+# Temporary Files
+# -----------------------------------------------------------------------------
+*.tmp
+*.temp
+*.log
+*.bak
+*.orig
+*.backup
+tmp/
+temp/
+.tmp/
+
+# RCIA audit logs (generated at runtime)
+rcia_audit.jsonl
+audit_logs/
+
+# -----------------------------------------------------------------------------
+# Package Lock Files (keep poetry.lock, ignore others)
+# -----------------------------------------------------------------------------
+# package-lock.json  # uncomment if using npm
+# yarn.lock  # uncomment if using yarn
+# pnpm-lock.yaml  # uncomment if using pnpm
+
+# -----------------------------------------------------------------------------
+# Profiling
+# -----------------------------------------------------------------------------
+*.prof
+*.lprof
+*.cprof
+profile_output/
+perf.data
+perf.data.old
+
+# -----------------------------------------------------------------------------
+# Archives (should not be committed)
+# -----------------------------------------------------------------------------
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.rar
+*.7z
+
+# Keep distribution archives in specific locations
+!dist/*.tar.gz
+!dist/*.whl

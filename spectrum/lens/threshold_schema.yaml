@@ -1,0 +1,275 @@
+# Threshold Documentation Schema
+#
+# This schema defines how regulatory and technical thresholds are documented
+# in the spectrum-governance framework. It implements a 5-tier hierarchy:
+#
+#   1. Statutory (law text)
+#   2. Regulatory (agency guidance)
+#   3. Academic (research papers)
+#   4. Industry (standards bodies)
+#   5. Expert (practitioner consensus)
+#
+# Each threshold must include:
+#   - Source and citation
+#   - Hierarchy level
+#   - Numerical value or qualitative criterion
+#   - Staleness indicator (last updated, review frequency)
+#   - Mapping to spectrum metrics
+
+schema_version: "1.0"
+
+# Template for a threshold definition
+threshold_template:
+  # Unique identifier
+  id: string  # e.g., "EU_AI_ACT_ROBUSTNESS_ASR"
+
+  # Descriptive metadata
+  name: string  # e.g., "EU AI Act Article 15 Robustness Threshold"
+  description: string  # Plain language explanation
+  regulation: string  # e.g., "EU_AI_ACT", "CFPB_REG_B", "GDPR"
+
+  # Hierarchy level (1-5)
+  hierarchy_level: integer
+  hierarchy_name: string  # "STATUTORY", "REGULATORY", "ACADEMIC", "INDUSTRY", "EXPERT"
+
+  # Citation information
+  citation:
+    source: string  # e.g., "Regulation (EU) 2024/1689"
+    section: string  # e.g., "Article 15, Paragraph 3"
+    url: string  # Official source URL
+    effective_date: date  # When the requirement took effect
+    last_reviewed: date  # When we last verified this threshold
+    review_frequency_days: integer  # How often to re-verify (staleness)
+
+  # Threshold value
+  threshold:
+    metric_name: string  # e.g., "attack_success_rate"
+    operator: string  # "less_than", "greater_than", "equals", "between"
+    value: number  # Numerical threshold (if applicable)
+    value_max: number  # Upper bound for "between" operator
+    qualitative_criteria: string  # For non-numerical thresholds
+
+  # Mapping to spectrum commands
+  technical_mapping:
+    spectrum_command: string  # e.g., "spectrum red"
+    metric_extraction: string  # How to extract the metric from results
+    validation_query: string  # RCIA log query to find evidence
+
+  # Contextual information
+  applicability:
+    risk_levels: array  # ["HIGH", "MODERATE", "LOW"]
+    model_types: array  # ["Tabular", "LLM", "Computer Vision"]
+    jurisdictions: array  # ["EU", "US", "UK"]
+    use_cases: array  # Optional specific use cases
+
+  # Metadata
+  proprietary: boolean  # True if this is Lexicon Automata proprietary intelligence
+  confidence_level: string  # "HIGH", "MEDIUM", "LOW" - our confidence in this threshold
+  notes: string  # Additional context or caveats
+
+# Example thresholds
+thresholds:
+  # EU AI Act Article 15 - Robustness
+  - id: EU_AI_ACT_ART15_ROBUSTNESS_ASR
+    name: "EU AI Act Article 15 Robustness - Attack Success Rate"
+    description: "High-risk AI systems must demonstrate appropriate robustness against adversarial attacks. Industry consensus suggests ASR < 30% for deployment."
+    regulation: "EU_AI_ACT"
+
+    hierarchy_level: 4
+    hierarchy_name: "INDUSTRY"
+
+    citation:
+      source: "Regulation (EU) 2024/1689"
+      section: "Article 15, Paragraph 3(a)"
+      url: "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32024R1689"
+      effective_date: "2024-08-01"
+      last_reviewed: "2025-01-15"
+      review_frequency_days: 180
+
+    threshold:
+      metric_name: "attack_success_rate"
+      operator: "less_than"
+      value: 0.30
+      value_max: null
+      qualitative_criteria: "Appropriate level of robustness and cybersecurity"
+
+    technical_mapping:
+      spectrum_command: "spectrum red"
+      metric_extraction: "adversarial_metrics.attack_success_rate"
+      validation_query: "event_type:adversarial.test"
+
+    applicability:
+      risk_levels: ["HIGH"]
+      model_types: ["Tabular", "LLM", "Computer Vision"]
+      jurisdictions: ["EU"]
+      use_cases: []
+
+    proprietary: true  # Numerical threshold is Lexicon Automata interpretation
+    confidence_level: "MEDIUM"  # Based on industry practice, not explicit law
+    notes: "Article 15 does not specify numerical thresholds. This value represents industry consensus from ML security practitioners."
+
+  # EU AI Act Article 10 - Data Quality
+  - id: EU_AI_ACT_ART10_DATA_DRIFT_PSI
+    name: "EU AI Act Article 10 Data Quality - PSI Drift Threshold"
+    description: "Training and validation datasets must be relevant and sufficiently representative. Significant drift (PSI > 0.25) indicates data may no longer be representative."
+    regulation: "EU_AI_ACT"
+
+    hierarchy_level: 3
+    hierarchy_name: "ACADEMIC"
+
+    citation:
+      source: "Regulation (EU) 2024/1689"
+      section: "Article 10, Paragraph 3"
+      url: "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32024R1689"
+      effective_date: "2024-08-01"
+      last_reviewed: "2025-01-15"
+      review_frequency_days: 180
+
+    threshold:
+      metric_name: "psi_max"
+      operator: "less_than"
+      value: 0.25
+      value_max: null
+      qualitative_criteria: "Data sets shall be relevant, sufficiently representative, and to the best extent possible, free of errors"
+
+    technical_mapping:
+      spectrum_command: "spectrum blue --drift-check"
+      metric_extraction: "drift_results.max_psi"
+      validation_query: "event_type:drift.check"
+
+    applicability:
+      risk_levels: ["HIGH", "MODERATE"]
+      model_types: ["Tabular"]
+      jurisdictions: ["EU"]
+      use_cases: []
+
+    proprietary: true  # PSI threshold based on academic research
+    confidence_level: "HIGH"  # Well-established statistical practice
+    notes: "PSI > 0.25 is widely accepted as indicating significant distribution shift. Source: Yurdakul (2018) 'Modeling Credit Risk'"
+
+  # CFPB Regulation B - Adverse Action Notices
+  - id: CFPB_REG_B_ADVERSE_ACTION_REASONS
+    name: "CFPB Regulation B Adverse Action - Specific Reasons Required"
+    description: "Creditors must provide specific reasons for adverse actions. Vague explanations like 'credit score' are insufficient."
+    regulation: "CFPB_REG_B"
+
+    hierarchy_level: 2
+    hierarchy_name: "REGULATORY"
+
+    citation:
+      source: "12 CFR Part 1002 (Regulation B)"
+      section: "Section 1002.9(b)(2)"
+      url: "https://www.consumerfinance.gov/rules-policy/regulations/1002/9/"
+      effective_date: "2011-07-21"
+      last_reviewed: "2025-01-15"
+      review_frequency_days: 365
+
+    threshold:
+      metric_name: "reason_code_specificity"
+      operator: "equals"
+      value: null
+      value_max: null
+      qualitative_criteria: "Statement of specific reasons for the action taken"
+
+    technical_mapping:
+      spectrum_command: "spectrum blue --explain"
+      metric_extraction: "sample_adverse_reasons"
+      validation_query: "event_type:explanation.generated"
+
+    applicability:
+      risk_levels: ["HIGH", "MODERATE", "LOW"]
+      model_types: ["Tabular"]
+      jurisdictions: ["US"]
+      use_cases: ["Credit Underwriting", "Lending"]
+
+    proprietary: false
+    confidence_level: "HIGH"
+    notes: "Official CFPB guidance: 'The statement of reasons must be specific and indicate the principal reasons for the adverse action.'"
+
+  # GDPR Article 25 - Privacy by Design
+  - id: GDPR_ART25_PRIVACY_PII_PSEUDONYMIZATION
+    name: "GDPR Article 25 Privacy by Design - PII Handling"
+    description: "Implement appropriate technical and organizational measures to ensure data minimization and pseudonymization where possible."
+    regulation: "GDPR"
+
+    hierarchy_level: 1
+    hierarchy_name: "STATUTORY"
+
+    citation:
+      source: "Regulation (EU) 2016/679 (GDPR)"
+      section: "Article 25, Paragraph 1"
+      url: "https://gdpr-info.eu/art-25-gdpr/"
+      effective_date: "2018-05-25"
+      last_reviewed: "2025-01-15"
+      review_frequency_days: 365
+
+    threshold:
+      metric_name: "pii_handling_policy"
+      operator: "equals"
+      value: null
+      value_max: null
+      qualitative_criteria: "Pseudonymisation of personal data"
+
+    technical_mapping:
+      spectrum_command: "spectrum blue --pii-detect"
+      metric_extraction: "pii_results"
+      validation_query: "event_type:pii.detected"
+
+    applicability:
+      risk_levels: ["HIGH", "MODERATE", "LOW"]
+      model_types: ["Tabular", "LLM"]
+      jurisdictions: ["EU", "UK"]
+      use_cases: []
+
+    proprietary: false  # Direct statutory requirement
+    confidence_level: "HIGH"  # Explicit legal text
+    notes: "Article 25 requires 'data protection by design and by default'"
+
+  # NIST AI RMF - Uncertainty Quantification
+  - id: NIST_AI_RMF_MEASURE_2_4_UQ_COVERAGE
+    name: "NIST AI RMF MEASURE-2.4 - Uncertainty Calibration"
+    description: "AI systems should quantify prediction uncertainty. For high-risk systems, empirical coverage should match target confidence level within 5%."
+    regulation: "NIST_AI_RMF"
+
+    hierarchy_level: 4
+    hierarchy_name: "INDUSTRY"
+
+    citation:
+      source: "NIST AI Risk Management Framework 1.0"
+      section: "MEASURE-2.4"
+      url: "https://doi.org/10.6028/NIST.AI.100-1"
+      effective_date: "2023-01-26"
+      last_reviewed: "2025-01-15"
+      review_frequency_days: 180
+
+    threshold:
+      metric_name: "empirical_coverage"
+      operator: "between"
+      value: 0.90  # For 95% confidence, accept 90-100% coverage
+      value_max: 1.00
+      qualitative_criteria: "AI system performance and trustworthiness – and impacts – are understood and documented"
+
+    technical_mapping:
+      spectrum_command: "spectrum blue"
+      metric_extraction: "empirical_coverage"
+      validation_query: "event_type:uncertainty.calibration"
+
+    applicability:
+      risk_levels: ["HIGH"]
+      model_types: ["Tabular"]
+      jurisdictions: ["US"]
+      use_cases: []
+
+    proprietary: true  # Numerical threshold is interpretation
+    confidence_level: "MEDIUM"  # Based on conformal prediction literature
+    notes: "NIST RMF does not specify numerical thresholds. This value based on conformal prediction best practices."
+
+# Metadata
+metadata:
+  last_updated: "2025-01-15"
+  version: "1.0"
+  owner: "Lexicon Automata"
+  proprietary_notice: |
+    Numerical threshold interpretations are proprietary intelligence developed by
+    Lexicon Automata through analysis of regulatory guidance, academic research,
+    and industry practice. This constitutes the "Law Pack" competitive advantage.
