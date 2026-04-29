@@ -57,7 +57,7 @@
 | Crate | Purpose | Key Components |
 |-------|---------|----------------|
 | `spectrum-red` | High-performance attacks | HopSkipJumpAttack, ZOOAttack, BoundaryAttack |
-| `spectrum-blue` | Fast SHAP/CP | (Planned: TreeSHAP, streaming CP) |
+| `spectrum-blue` | Compliance-first explainability | AuditableSHAP, StabilityMetrics, ReasonCodeEngine |
 | `spectrum-lens` | Audit infrastructure | (Planned: fast logging, hash chain) |
 | `spectrum-common` | Shared types | AdversarialMetrics, Model trait |
 
@@ -141,6 +141,43 @@
 └─────────────────────────────────────────────────────────────────────────────────┘
 ```
 
+### Explanation Audit Flow
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                        EXPLANATION AUDIT FLOW                                    │
+├─────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                  │
+│   Request              Computation              Audit                            │
+│   ───────              ───────────              ─────                            │
+│                                                                                  │
+│   Applicant X    ───►  TreeSHAP          ───►   ExplanationEvent {              │
+│   Loan Decision        (seeded RNG)              audit_id: "abc-123",           │
+│                        │                          timestamp: "2024-...",         │
+│                        ▼                          model_hash: "sha256:...",      │
+│                   SHAP Values              ───►   input_hash: "sha256:...",      │
+│                   [income: -0.3,                  shap_values: [...],            │
+│                    debt: +0.5, ...]               reason_codes: [...],           │
+│                        │                          stability: {...}               │
+│                        ▼                        }                                │
+│                   Reason Codes             ───►        │                         │
+│                   1. High debt ratio                   ▼                         │
+│                   2. Short credit history        spectrum-lens                  │
+│                        │                         (immutable log)                │
+│                        ▼                               │                         │
+│                   Adverse Action Notice                ▼                         │
+│                   (sent to applicant)            Hash Chain                      │
+│                                                  (tamper-evident)                │
+│                                                                                  │
+└─────────────────────────────────────────────────────────────────────────────────┘
+```
+
+**Key Properties:**
+- **Reproducible**: Seeded RNG ensures same input → same SHAP values
+- **Auditable**: Every explanation logged with cryptographic hashes
+- **Defensible**: Can reproduce exact explanation given to any applicant
+- **Tamper-evident**: Hash chain prevents after-the-fact modification
+
 ---
 
 ## Component Details
@@ -189,6 +226,85 @@
 2. **Population Stability Index**: Symmetric KL divergence
 3. **SHAP Values**: Shapley value-based feature attribution
 4. **EnbPI**: Bootstrap-based time series intervals
+
+#### Compliance-First Explainability (Rust Core)
+
+**"SHAP You Can Defend in Court"** - Unlike standard SHAP libraries that focus on data science workflows, spectrum-blue provides explainability with built-in audit trails, stability guarantees, and regulatory compliance.
+
+**What's Missing in Existing Tools:**
+
+| Gap | Why It Matters for Compliance |
+|-----|-------------------------------|
+| No audit trail | Regulators ask "what explanation was given to applicant X on date Y?" |
+| No stability metrics | KernelSHAP values vary with random seed; no uncertainty quantification |
+| No reproducibility | Can't recreate the exact explanation given 6 months ago |
+| No adverse action mapping | SHAP values → reason codes requires manual translation |
+| No consistency monitoring | Explanations can drift over time even with stable models |
+
+**Auditable SHAP Architecture:**
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    AUDITABLE SHAP ARCHITECTURE                               │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   Input                    Rust Core                      Output             │
+│   ─────                    ─────────                      ──────             │
+│                                                                              │
+│   ┌─────────────┐         ┌──────────────────┐          ┌────────────────┐  │
+│   │ Model +     │─────────│  TreeSHAP /      │──────────│ SHAP Values    │  │
+│   │ Sample      │         │  KernelSHAP      │          │ + Stability CI │  │
+│   └─────────────┘         └────────┬─────────┘          └───────┬────────┘  │
+│                                    │                            │           │
+│                           ┌────────▼─────────┐                  │           │
+│                           │ StabilityMetrics │                  │           │
+│                           │ (bootstrap CI)   │                  │           │
+│                           └────────┬─────────┘                  │           │
+│                                    │                            │           │
+│                           ┌────────▼─────────┐          ┌───────▼────────┐  │
+│                           │ ReasonCodeEngine │──────────│ Adverse Action │  │
+│                           │ (CFPB 1002.9)    │          │ Reason Codes   │  │
+│                           └────────┬─────────┘          └────────────────┘  │
+│                                    │                                        │
+│                           ┌────────▼─────────┐          ┌────────────────┐  │
+│                           │  spectrum-lens   │──────────│ Immutable      │  │
+│                           │  Integration     │          │ Audit Log      │  │
+│                           └──────────────────┘          └────────────────┘  │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+**Key Components (Rust):**
+
+| Component | Purpose | Regulatory Link |
+|-----------|---------|-----------------|
+| `AuditableSHAP` | SHAP with automatic audit logging | CFPB 1002.9, SR 11-7 |
+| `StabilityMetrics` | Bootstrap CI on SHAP values | Model risk management |
+| `ReasonCodeEngine` | SHAP → ranked reason codes | CFPB adverse action |
+| `ExplanationDrift` | Monitor explanation consistency | OCC 2011-12 |
+
+**API Design (Rust):**
+
+```rust
+pub struct AuditableSHAP {
+    explainer: TreeSHAPExplainer,
+    audit_sink: Arc<dyn AuditSink>,  // spectrum-lens integration
+    config: SHAPConfig,
+}
+
+pub struct SHAPResult {
+    pub values: Array2<f64>,           // SHAP values per feature
+    pub stability: StabilityMetrics,   // CI bounds
+    pub reason_codes: Vec<ReasonCode>, // Ranked explanations
+    pub audit_id: Uuid,                // Reference for audit trail
+}
+
+pub struct StabilityMetrics {
+    pub confidence_intervals: Array2<(f64, f64)>,  // (low, high) per value
+    pub stability_score: f64,                       // 0-1 overall stability
+    pub unstable_features: Vec<usize>,              // Features with wide CI
+}
+```
 
 ### spectrum.lens - Governance Module
 
@@ -282,7 +398,10 @@ wrapper.use_onnx = True  # ~9x speedup
 |------------|-------------------|-------------------|
 | EU AI Act Article 15 | spectrum.red | Attack success rates, perturbation metrics |
 | CFPB Regulation B | spectrum.blue | SHAP-based adverse action reasons |
+| CFPB 1002.9 (Adverse Action) | spectrum.blue | Ranked reason codes, explanation audit trail |
 | OCC SR 11-7 | spectrum.blue | Drift monitoring, coverage metrics |
+| SR 11-7 (Model Risk) | spectrum.blue | Explanation stability metrics, uncertainty quantification |
+| OCC 2011-12 (Model Validation) | spectrum.blue | Explanation drift monitoring, consistency checks |
 | NIST AI RMF 1.0 | spectrum.lens | RMF compliance gap reports |
 | GDPR Article 25 | spectrum.infra | PII detection and handling |
 

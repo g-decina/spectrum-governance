@@ -85,6 +85,7 @@
 
 use ndarray::{Array1, Array2, Axis};
 use rand::Rng;
+use rand::{SeedableRng, rngs::StdRng};
 use rand_distr::{Distribution, StandardNormal};
 use rayon::prelude::*;
 use std::sync::Arc;
@@ -179,6 +180,9 @@ pub struct HopSkipJumpConfig {
     /// Uses Rayon to parallelize attacks on multiple samples.
     /// Disable for debugging or when parallelism is managed externally.
     pub parallel: bool,
+
+    ///  Set a seed for random noise generation (default: None for entropy-based)
+    pub seed: Option<u64>,
 }
 
 impl Default for HopSkipJumpConfig {
@@ -193,6 +197,7 @@ impl Default for HopSkipJumpConfig {
             constraint: f64::INFINITY,
             initial_adversarial: None,
             parallel: true,
+            seed: None,
         }
     }
 }
@@ -222,6 +227,7 @@ pub struct HopSkipJumpConfigBuilder {
     constraint: f64,
     initial_adversarial: Option<Array2<f64>>,
     parallel: bool,
+    seed: Option<u64>,
 }
 
 impl Default for HopSkipJumpConfigBuilder {
@@ -237,6 +243,7 @@ impl Default for HopSkipJumpConfigBuilder {
             constraint: default_config.constraint,
             initial_adversarial: default_config.initial_adversarial,
             parallel: default_config.parallel,
+            seed: None,
         }
     }
 }
@@ -296,6 +303,12 @@ impl HopSkipJumpConfigBuilder {
         self
     }
 
+    /// Set a random seed for reproducibility
+    pub fn seed(mut self, value: u64) -> Self {
+        self.seed = Some(value);
+        self
+    }
+
     /// Build the configuration
     pub fn build(self) -> HopSkipJumpConfig {
         HopSkipJumpConfig {
@@ -308,6 +321,7 @@ impl HopSkipJumpConfigBuilder {
             constraint: self.constraint,
             initial_adversarial: self.initial_adversarial,
             parallel: self.parallel,
+            seed: self.seed,
         }
     }
 }
@@ -513,7 +527,10 @@ impl HopSkipJumpAttack {
         model: &dyn Model,
         query_counter: &Arc<std::sync::atomic::AtomicUsize>,
     ) -> Result<Array1<f64>, HopSkipJumpError> {
-        let mut rng = rand::thread_rng();
+        let mut rng = match self.config.seed {
+            Some(s) => StdRng::seed_from_u64(s),
+            None => StdRng::from_entropy()
+        };
         let n_features = x_original.len();
 
         // BATCHED initialization for speed
@@ -668,7 +685,10 @@ impl HopSkipJumpAttack {
         let delta = 0.01;
 
         // Pre-generate all random directions and perturbed samples (BATCH)
-        let mut rng = rand::thread_rng();
+        let mut rng = match self.config.seed {
+            Some(s) => StdRng::seed_from_u64(s),
+            None => StdRng::from_entropy(),
+        };
         let mut noise_directions: Vec<Array1<f64>> = Vec::with_capacity(num_evals);
         let mut x_batch = Array2::zeros((num_evals, n_features));
 
@@ -1116,7 +1136,10 @@ mod tests {
     #[test]
     fn test_estimate_gradient() {
         let model = MockLinearModel::new();
-        let config = HopSkipJumpConfig::default();
+        let config = HopSkipJumpConfig {
+            seed: Some(12345),
+            ..Default::default()
+        };
         let attack = HopSkipJumpAttack::new(config);
 
         // Point on boundary: x[0] ≈ 0.5

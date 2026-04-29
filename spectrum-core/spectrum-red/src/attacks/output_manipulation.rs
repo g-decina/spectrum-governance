@@ -20,6 +20,7 @@
 
 use ndarray::{Array1, Array2, Axis};
 use rand::prelude::*;
+use rand::{SeedableRng, rngs::StdRng};
 use rand_distr::Normal;
 use rayon::prelude::*;
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -56,6 +57,8 @@ pub struct OutputManipulationConfig {
     pub confidence_level: ConfidenceLevel,
     /// Number of bootstrap resamples for CI computation
     pub n_bootstrap: usize,
+    /// Set a seed for random noise generation (default: None for entropy-based)
+    pub seed: Option<u64>,
 }
 
 impl Default for OutputManipulationConfig {
@@ -71,6 +74,7 @@ impl Default for OutputManipulationConfig {
             bin_mode: "uniform".to_string(),
             confidence_level: ConfidenceLevel::default(),
             n_bootstrap: 10_000,
+            seed: None,
         }
     }
 }
@@ -134,6 +138,12 @@ impl OutputManipulationConfigBuilder {
 
     pub fn n_bootstrap(mut self, n: usize) -> Self {
         self.config.n_bootstrap = n;
+        self
+    }
+
+    /// Set a random seed for reproducibility
+    pub fn seed(mut self, value: u64) -> Self {
+        self.config.seed = Some(value);
         self
     }
 
@@ -224,7 +234,10 @@ impl OutputManipulationAttack {
         bin_edges: &[f64],
         query_counter: &Arc<AtomicUsize>,
     ) -> Result<Option<Array1<f64>>, RegressionAttackError> {
-        let mut rng = rand::thread_rng();
+        let mut rng = match self.config.seed {
+            Some(s) => StdRng::seed_from_u64(s),
+            None => StdRng::from_entropy(),
+        };
         let normal = Normal::new(0.0, 1.0).unwrap();
 
         // Try random perturbations to find different bin
@@ -305,7 +318,10 @@ impl OutputManipulationAttack {
         query_counter: &Arc<AtomicUsize>,
     ) -> Result<Array1<f64>, RegressionAttackError> {
         let n_features = x_boundary.len();
-        let mut rng = rand::thread_rng();
+        let mut rng = match self.config.seed {
+            Some(s) => StdRng::seed_from_u64(s),
+            None => StdRng::from_entropy(),
+        };
         let normal = Normal::new(0.0, 1.0).unwrap();
 
         // Current distance

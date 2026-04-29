@@ -18,6 +18,7 @@
 
 use ndarray::{Array1, Array2, Axis};
 use rand::prelude::*;
+use rand::{SeedableRng, rngs::StdRng};
 use rand_distr::Normal;
 use rayon::prelude::*;
 
@@ -44,6 +45,8 @@ pub struct QuantileAttackConfig {
     pub attack_mode: String,
     /// For models without native interval prediction, provide calibrated half-width
     pub calibration_width: Option<f64>,
+    /// Set a seed for random noise generation (default: None for entropy-based)
+    pub seed: Option<u64>,
 }
 
 impl Default for QuantileAttackConfig {
@@ -56,6 +59,7 @@ impl Default for QuantileAttackConfig {
             clip_bounds: None,
             attack_mode: "break_coverage".to_string(),
             calibration_width: None,
+            seed: None,
         }
     }
 }
@@ -104,6 +108,12 @@ impl QuantileAttackConfigBuilder {
 
     pub fn calibration_width(mut self, width: f64) -> Self {
         self.config.calibration_width = Some(width);
+        self
+    }
+
+    /// Set a random seed for reproducibility
+    pub fn seed(mut self, value: u64) -> Self {
+        self.config.seed = Some(value);
         self
     }
 
@@ -169,7 +179,10 @@ impl QuantileAttack {
         model: &dyn RegressionModel,
     ) -> Result<(Array1<f64>, bool), RegressionAttackError> {
         let n_features = x_original.len();
-        let mut rng = rand::thread_rng();
+        let mut rng = match self.config.seed {
+            Some(s) => StdRng::seed_from_u64(s),
+            None => StdRng::from_entropy(),
+        };
         let normal = Normal::new(0.0, 1.0).unwrap();
 
         // Goal: find perturbation where predicted interval no longer covers y_true
@@ -234,7 +247,10 @@ impl QuantileAttack {
         model: &dyn RegressionModel,
     ) -> Result<(Array1<f64>, f64), RegressionAttackError> {
         let n_features = x_original.len();
-        let mut rng = rand::thread_rng();
+        let mut rng = match self.config.seed {
+            Some(s) => StdRng::seed_from_u64(s),
+            None => StdRng::from_entropy(),
+        };
         let normal = Normal::new(0.0, 1.0).unwrap();
 
         // Get original width

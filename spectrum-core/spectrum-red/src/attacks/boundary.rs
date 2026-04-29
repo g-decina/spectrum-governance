@@ -66,6 +66,7 @@
 
 use ndarray::{Array1, Array2, Axis};
 use rand::Rng;
+use rand::{SeedableRng, rngs::StdRng};
 use rand_distr::{StandardNormal, Distribution};
 use rayon::prelude::*;
 use std::sync::Arc;
@@ -116,6 +117,9 @@ pub struct BoundaryConfig {
 
     /// Enable parallel execution (default: true)
     pub parallel: bool,
+
+    /// Set a seed for random noise generation (default: None for entropy-based)
+    pub seed: Option<u64>,
 }
 
 impl Default for BoundaryConfig {
@@ -126,6 +130,7 @@ impl Default for BoundaryConfig {
             epsilon: 0.01,
             init_size: 100,
             parallel: true,
+            seed: None,
         }
     }
 }
@@ -167,6 +172,12 @@ impl BoundaryConfigBuilder {
 
     pub fn parallel(mut self, value: bool) -> Self {
         self.config.parallel = value;
+        self
+    }
+
+    /// Set a random seed for reproducibility
+    pub fn seed(mut self, value: u64) -> Self {
+        self.config.seed = Some(value);
         self
     }
 
@@ -296,9 +307,12 @@ impl BoundaryAttack {
         query_counter: &Arc<std::sync::atomic::AtomicUsize>,
     ) -> Result<Array1<f64>, BoundaryError> {
         let y_original = self.predict_label(x_original, model, query_counter)?;
+        let mut rng = match self.config.seed {
+            Some(s) => StdRng::seed_from_u64(s),
+            None => StdRng::from_entropy(),
+        };
 
         for _ in 0..self.config.init_size {
-            let mut rng = rand::thread_rng();
             let x_random: Array1<f64> = Array1::from_shape_fn(x_original.len(), |_| {
                 rng.gen::<f64>()
             });
@@ -330,7 +344,10 @@ impl BoundaryAttack {
         }
 
         // Sample random direction
-        let mut rng = rand::thread_rng();
+        let mut rng = match self.config.seed {
+            Some(s) => StdRng::seed_from_u64(s),
+            None => StdRng::from_entropy(),
+        };
         let normal = StandardNormal;
         let random_dir: Array1<f64> = Array1::from_shape_fn(x_original.len(), |_| {
             normal.sample(&mut rng)

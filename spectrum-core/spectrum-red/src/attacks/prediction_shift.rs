@@ -20,6 +20,7 @@
 
 use ndarray::{Array1, Array2, Axis};
 use rand::prelude::*;
+use rand::{SeedableRng, rngs::StdRng};
 use rand_distr::Normal;
 use rayon::prelude::*;
 
@@ -53,6 +54,8 @@ pub struct PredictionShiftConfig {
     pub confidence_level: ConfidenceLevel,
     /// Number of bootstrap resamples for CI computation
     pub n_bootstrap: usize,
+    /// Set a seed for random noise generation (default: None for entropy-based)
+    pub seed: Option<u64>,
 }
 
 impl Default for PredictionShiftConfig {
@@ -67,6 +70,7 @@ impl Default for PredictionShiftConfig {
             success_threshold: 0.10,
             confidence_level: ConfidenceLevel::default(),
             n_bootstrap: 10_000,
+            seed: None,
         }
     }
 }
@@ -128,6 +132,12 @@ impl PredictionShiftConfigBuilder {
         self
     }
 
+    /// Set a random seed for reproducibility
+    pub fn seed(mut self, value: u64) -> Self {
+        self.config.seed = Some(value);
+        self
+    }
+
     pub fn build(self) -> PredictionShiftConfig {
         self.config
     }
@@ -169,7 +179,10 @@ impl PredictionShiftAttack {
         model: &dyn RegressionModel,
     ) -> Result<(Array1<f64>, f64, Option<usize>), RegressionAttackError> {
         let n_features = x_original.len();
-        let mut rng = rand::thread_rng();
+        let mut rng = match self.config.seed {
+            Some(s) => StdRng::seed_from_u64(s),
+            None => StdRng::from_entropy(),
+        };
         let normal = Normal::new(0.0, 1.0).unwrap();
 
         let mut best_adv = x_original.clone();
@@ -421,7 +434,7 @@ mod tests {
         let x = Array1::from_vec(vec![1.0, 2.0, 3.0, 4.0]);
         let y = 10.0;
 
-        let (x_adv, shift) = attack.attack_single(&x, y, &model).unwrap();
+        let (x_adv, shift, _queries) = attack.attack_single(&x, y, &model).unwrap();
         assert_ne!(shift, 0.0);
         assert_eq!(x_adv.len(), 4);
     }

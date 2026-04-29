@@ -63,6 +63,7 @@
 
 use ndarray::{Array1, Array2, Axis};
 use rand::Rng;
+use rand::{SeedableRng, rngs::StdRng};
 use rayon::prelude::*;
 use std::sync::Arc;
 use thiserror::Error;
@@ -115,6 +116,9 @@ pub struct SquareConfig {
 
     /// Enable parallel execution (default: true)
     pub parallel: bool,
+
+    /// Set a seed for random noise generation (default: None for entropy-based)
+    pub seed: Option<u64>,
 }
 
 impl Default for SquareConfig {
@@ -126,6 +130,7 @@ impl Default for SquareConfig {
             n_restarts: 100,
             loss: "margin".to_string(),
             parallel: true,
+            seed: None,
         }
     }
 }
@@ -167,6 +172,12 @@ impl SquareConfigBuilder {
 
     pub fn parallel(mut self, value: bool) -> Self {
         self.config.parallel = value;
+        self
+    }
+
+    /// Set a random seed for reproducibility
+    pub fn seed(mut self, value: u64) -> Self {
+        self.config.seed = Some(value);
         self
     }
 
@@ -320,7 +331,10 @@ impl SquareAttack {
 
     /// Generate random perturbation
     fn random_perturbation(&self, n_features: usize) -> Array1<f64> {
-        let mut rng = rand::thread_rng();
+        let mut rng = match self.config.seed {
+            Some(s) => StdRng::seed_from_u64(s),
+            None => StdRng::from_entropy(),
+        };
         Array1::from_shape_fn(n_features, |_| {
             let val: f64 = rng.gen();
             (val * 2.0 - 1.0) * self.config.epsilon
@@ -329,7 +343,10 @@ impl SquareAttack {
 
     /// Generate square-shaped perturbation
     fn square_perturbation(&self, n_features: usize, p: f64) -> Array1<f64> {
-        let mut rng = rand::thread_rng();
+        let mut rng = match self.config.seed {
+            Some(s) => StdRng::seed_from_u64(s),
+            None => StdRng::from_entropy(),
+        };
         Array1::from_shape_fn(n_features, |_| {
             if rng.gen::<f64>() < p {
                 let val: f64 = rng.gen();

@@ -58,6 +58,7 @@
 
 use ndarray::{Array1, Array2, Axis};
 use rand::Rng;
+use rand::{SeedableRng, rngs::StdRng};
 use rayon::prelude::*;
 use std::sync::Arc;
 use thiserror::Error;
@@ -123,6 +124,9 @@ pub struct ZOOConfig {
 
     /// Enable parallel execution (default: true)
     pub parallel: bool,
+
+    /// Set a seed for random noise generation (default: None for entropy-based)
+    pub seed: Option<u64>,
 }
 
 impl Default for ZOOConfig {
@@ -138,6 +142,7 @@ impl Default for ZOOConfig {
             adam_epsilon: 1e-8,
             confidence: 0.0,
             parallel: true,
+            seed: None,
         }
     }
 }
@@ -184,6 +189,12 @@ impl ZOOConfigBuilder {
 
     pub fn parallel(mut self, value: bool) -> Self {
         self.config.parallel = value;
+        self
+    }
+
+    /// Set a random seed for reproducibility
+    pub fn seed(mut self, value: u64) -> Self {
+        self.config.seed = Some(value);
         self
     }
 
@@ -341,7 +352,10 @@ impl ZOOAttack {
         let mut gradient = Array1::zeros(n_features);
 
         // Sample random coordinates
-        let mut rng = rand::thread_rng();
+        let mut rng = match self.config.seed {
+            Some(s) => StdRng::seed_from_u64(s),
+            None => StdRng::from_entropy(),
+        };
         let mut indices: Vec<usize> = (0..n_features).collect();
 
         // Shuffle and take batch_size coordinates
