@@ -1080,6 +1080,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "spectrum-core"
+version = "0.1.0"
+
+[[package]]
 name = "spectrum-infra"
 version = "0.1.0"
 dependencies = [

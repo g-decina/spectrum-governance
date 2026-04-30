@@ -4,7 +4,7 @@ members = [
     "spectrum-core/spectrum-infra",
     "spectrum-core/spectrum-red",
     "spectrum-core/spectrum-blue",
-    "spectrum-core/spectrum-lens",
+    "spectrum-core/spectrum-lens", "spectrum-core",
 ]
 resolver = "2"
 
