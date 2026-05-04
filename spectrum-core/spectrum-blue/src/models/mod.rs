@@ -13,5 +13,5 @@ pub trait Model {
 // TreeSHAP algorithm needs access to nodes for efficient computation.
 pub trait TreeModel: Model {
     fn nodes(&self) -> &[TreeNode];
-    fn root_index(&self) -> usize;
+    fn root_idx(&self) -> usize;
 }

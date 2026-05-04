@@ -1082,6 +1082,9 @@ dependencies = [
 [[package]]
 name = "spectrum-core"
 version = "0.1.0"
+dependencies = [
+ "ndarray",
+]
 
 [[package]]
 name = "spectrum-infra"

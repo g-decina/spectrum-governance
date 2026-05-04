@@ -13,16 +13,140 @@ Unlike standard SHAP libraries that focus on data science workflows, spectrum-bl
 
 ---
 
+## Python API Design
+
+### Design Principles
+
+The Python API follows the **two-step load-then-explain pattern** familiar from scikit-learn and the `shap` library:
+
+1. **Parse once, explain many** - Optimized for deployment middleware where models are loaded once and used for many inference calls
+2. **Familiar interface** - Mirrors existing `shap.TreeExplainer` API for easy adoption
+3. **Optional audit logging** - Can be enabled for regulatory compliance without impacting performance
+4. **Multi-format support** - Single API for ONNX, XGBoost, and LightGBM models
+
+### Basic Usage
+
+```python
+import spectrum_blue
+
+# Step 1: Load model (parse once)
+model = spectrum_blue.load_tree_model("model.onnx")
+
+# Step 2: Create explainer
+explainer = spectrum_blue.TreeSHAPExplainer()
+
+# Step 3: Explain (many times, efficiently)
+for sample in inference_stream:
+    shap_values = explainer.explain(model, sample)
+    # shap_values: numpy array matching sklearn/shap conventions
+```
+
+### With Audit Logging
+
+```python
+from spectrum_lens import JsonlSink
+
+# Enable audit trail for regulatory compliance
+explainer = spectrum_blue.TreeSHAPExplainer(
+    audit_sink=JsonlSink("explanations.jsonl")
+)
+
+# Every explain() call is now logged with immutable audit trail
+shap_values = explainer.explain(model, features)
+```
+
+### Deployment Middleware Pattern
+
+```python
+# One-time setup
+model = spectrum_blue.load_tree_model("credit_model.onnx")
+explainer = spectrum_blue.TreeSHAPExplainer()
+
+# At inference time (high-throughput)
+@app.route('/predict', methods=['POST'])
+def predict():
+    features = request.json['features']
+
+    # Fast: model already parsed, Rust backend
+    shap_values = explainer.explain(model, features)
+
+    return {
+        'prediction': model.predict(features),
+        'shap_values': shap_values.tolist()
+    }
+```
+
+### Batch Processing
+
+```python
+# Explain multiple samples efficiently
+import numpy as np
+
+X_batch = np.array([...])  # Shape: (n_samples, n_features)
+shap_batch = explainer.explain_batch(model, X_batch)
+# shap_batch: Shape (n_samples, n_features)
+```
+
+### API Compatibility Matrix
+
+| Use Case | Current Python API | New Rust API | Migration |
+|----------|-------------------|--------------|-----------|
+| Ad-hoc analysis | `generate_shap_explanations()` | `spectrum_blue.TreeSHAPExplainer` | Simple |
+| Deployment middleware | Not optimized | Optimized (load once) | Recommended |
+| Adverse action reasons | `ReasonCodeGenerator` | Phase 4 integration | Future |
+| Audit compliance | Manual logging | Built-in `audit_sink` | Phase 3 |
+
+### Rust Public API (Internal)
+
+The PyO3 bindings expose these Rust types to Python:
+
+```rust
+// spectrum-blue/src/lib.rs (with PyO3)
+
+#[pyfunction]
+fn load_tree_model(path: &str) -> PyResult<Tree> {
+    // Auto-detect format (ONNX/XGBoost/LightGBM)
+    // Returns parsed Tree instance
+}
+
+#[pyclass]
+struct TreeSHAPExplainer {
+    audit_sink: Option<Box<dyn AuditSink>>,
+}
+
+#[pymethods]
+impl TreeSHAPExplainer {
+    #[new]
+    fn new(audit_sink: Option<PyObject>) -> Self { ... }
+
+    fn explain(&self, tree: &Tree, features: Vec<f64>) -> PyResult<Vec<f64>> {
+        // Efficient TreeSHAP algorithm (15x faster than Python)
+        // Optional audit logging if sink configured
+    }
+
+    fn explain_batch(&self, tree: &Tree, features: Vec<Vec<f64>>) -> PyResult<Vec<Vec<f64>>> {
+        // Parallel batch processing via Rayon
+    }
+}
+```
+
+---
+
 ## Phase 1: Core TreeSHAP (Foundation)
 
 **Goal:** High-performance TreeSHAP with reproducibility
 
 **Deliverables:**
-- [ ] Tree model trait supporting multiple formats
-  - XGBoost JSON
-  - LightGBM model files
-  - ONNX tree ensemble
-- [ ] TreeSHAP algorithm (Lundberg's path-dependent method)
+- [x] Tree model trait and base implementation
+  - [x] `Model` trait (base prediction interface)
+  - [x] `TreeModel` trait (tree-specific structure access)
+  - [x] `Tree` struct with node representation
+- [x] Naive SHAP implementation (exponential, test/validation only)
+- [ ] Efficient TreeSHAP algorithm (Lundberg's path-dependent method)
+- [ ] Model parsers supporting multiple formats
+  - [ ] XGBoost JSON
+  - [ ] LightGBM model files
+  - [ ] ONNX tree ensemble
 - [ ] Seeded RNG for deterministic computation
 - [ ] Rayon parallelization (per-sample and per-tree)
 - [ ] Python bindings via PyO3
@@ -30,19 +154,26 @@ Unlike standard SHAP libraries that focus on data science workflows, spectrum-bl
 
 **Performance Target:** ≥15x faster than Python shap on 16 cores
 
+**Current Status (2026-04-29):**
+- ✅ Module structure established (`models/`, `explainability/`)
+- ✅ Naive SHAP working (tests passing)
+- 🔜 Next: Efficient TreeSHAP algorithm implementation
+- 🔜 Next: PyO3 bindings for Python integration
+
 **Key Files:**
 ```
 spectrum-core/spectrum-blue/src/
-├── lib.rs                    # PyO3 bindings
-├── tree_shap/
+├── lib.rs                           # Public API + future PyO3 bindings
+├── models/
+│   ├── mod.rs                       # Model and TreeModel traits
+│   └── tree.rs                      # Tree, TreeNode, NodeType impls
+├── explainability/
 │   ├── mod.rs
-│   ├── explainer.rs          # TreeSHAPExplainer
-│   ├── tree.rs               # Tree model trait
-│   └── algorithm.rs          # Path-dependent TreeSHAP
-└── model/
-    ├── xgboost.rs            # XGBoost JSON parser
-    ├── lightgbm.rs           # LightGBM parser
-    └── onnx.rs               # ONNX tree ensemble
+│   └── naive_shap.rs                # NaiveSHAPExplainer (O(2^n))
+└── (future) parsers/
+    ├── xgboost.rs
+    ├── lightgbm.rs
+    └── onnx.rs
 ```
 
 ---
@@ -228,4 +359,17 @@ Phase 6 (KernelSHAP) ◄──────────────────�
 
 ---
 
-*Last updated: 2026*
+## Change Log
+
+**2026-04-29:**
+- ✅ Added Python API design section
+- ✅ Completed module structure (models/, explainability/)
+- ✅ Naive SHAP implementation working (tests passing)
+- 📝 Documented design rationale in private/dev-notes/SHAP_API_DESIGN.md
+
+**2026 (initial):**
+- 📋 Created roadmap and phase breakdown
+
+---
+
+*Last updated: 2026-04-29*

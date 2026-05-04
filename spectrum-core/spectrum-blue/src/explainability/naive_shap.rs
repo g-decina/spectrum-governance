@@ -54,7 +54,8 @@ mod tests {
     fn test_naive_shap() {
         let tree = Tree { nodes: vec![
                 TreeNode{
-                    node_type: NodeType::Split{ feature_index: 0, threshold: 0.1 },
+                    node_type: NodeType::Split{ feature_idx: 0, threshold: 0.1, 
+                                                left_cover: 0.5, right_cover: 0.5 },
                     left: Some(1), right: Some(2),
                 },
                 TreeNode{

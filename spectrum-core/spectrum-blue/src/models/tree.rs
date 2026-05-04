@@ -1,7 +1,12 @@
 use super::{Model, TreeModel};
 
 pub enum NodeType {
-    Split { feature_index: usize, threshold: f64 },
+    Split { 
+        feature_idx: usize, 
+        threshold: f64,
+        left_cover: f64,
+        right_cover: f64,
+    },
     Leaf { value: f64 },
 }
 
@@ -22,15 +27,14 @@ impl Tree {
             let node = &self.nodes[current_idx];
             match &node.node_type {
                 NodeType::Leaf { value } => { return *value }
-                NodeType::Split { feature_index, threshold } => {
-                    if features[*feature_index] < *threshold {
+                NodeType::Split { feature_idx, threshold, .. } => {
+                    if features[*feature_idx] < *threshold {
                         current_idx = node.left.unwrap()
                     } else { current_idx = node.right.unwrap() }
                 }
             }
         }
     }
-
 
     // Predict using only the features in `mask`.
     // mask[i] = true enables features i, false means "average both branches"
@@ -48,10 +52,10 @@ impl Tree {
                 *value 
             }
 
-            NodeType::Split { feature_index, threshold } => {
-                if mask[*feature_index] {
+            NodeType::Split { feature_idx, threshold, .. } => {
+                if mask[*feature_idx] {
                     // Feature is KNOWN: go left or right as normal
-                    if features[*feature_index] < *threshold {
+                    if features[*feature_idx] < *threshold {
                         self.predict_node(node.left.unwrap(), features, mask)
                     } else { 
                         self.predict_node(node.right.unwrap(), features, mask)
@@ -60,7 +64,12 @@ impl Tree {
                     // Feature is UNKNOWN: average over both branches
                     let left_val = self.predict_node(node.left.unwrap(), features, mask);
                     let right_val = self.predict_node(node.right.unwrap(), features, mask);
-                    (left_val + right_val) / 2.0
+                    if let NodeType::Split { left_cover, right_cover, ..} = &node.node_type {
+                        let total = left_cover + right_cover;
+                        (left_val * left_cover + right_val * right_cover) / total
+                    } else {
+                        unreachable!()
+                    }
                 }
             }
         }
@@ -78,7 +87,7 @@ impl TreeModel for Tree {
         &self.nodes
     }
 
-    fn root_index(&self) -> usize {
+    fn root_idx(&self) -> usize {
         0
     }
 }
