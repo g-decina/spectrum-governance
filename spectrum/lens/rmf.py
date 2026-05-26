@@ -54,8 +54,8 @@ class RMFComplianceEngine:
         (1) artifacts exist;
         (2) technical controls are enforced; and
         (3) evidence is logged. 
-        It does not tell organizations how to build their 
-        internal governance program and requirements.
+    It does not tell organizations how to build their internal
+    governance program and requirements.
     """
     
     def __init__(self, artifact_directory: str, rcia_log_path: str):
